@@ -1,0 +1,12 @@
+{
+  "name": "schoolbridge-core",
+  "version": "1.0.0",
+  "description": "SchoolBridge Core Backend Sandbox",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "^4.21.1"
+  }
+}

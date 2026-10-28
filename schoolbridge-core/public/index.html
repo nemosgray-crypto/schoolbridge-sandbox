@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SchoolBridge Sandbox Operations Dashboard</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #f8fafc; padding: 30px; margin: 0; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        header { border-bottom: 2px solid #1e293b; padding-bottom: 2px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;}
+        h1 { color: #38bdf8; margin: 0; font-size: 28px; }
+        .status-pill { background: #10b981; padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .card { background: #1e293b; padding: 20px; border-radius: 12px; border: 1px solid #334155; }
+        h2 { color: #f1f5f9; margin-top: 0; font-size: 18px; border-bottom: 1px solid #334155; padding-bottom: 8px;}
+        pre { background: #090d16; padding: 12px; border-radius: 8px; overflow-x: auto; color: #a7f3d0; font-family: monospace; font-size: 13px;}
+        .btn { background: #38bdf8; color: #0f172a; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-right: 8px; margin-top: 5px;}
+        .btn:hover { background: #7dd3fc; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #f87171; }
+        .acr-log-box { background: #090d16; border-left: 4px solid #64748b; padding: 10px; font-family: monospace; color: #94a3b8; font-size: 13px; margin-bottom: 6px; border-radius: 0 4px 4px 0;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>SchoolBridge Core Sandbox Engine</h1>
+                <p style="color: #94a3b8; margin: 5px 0 0 0;">Standalone Evaluation Build - Database & Network Integrations Disconnected</p>
+            </div>
+            <span class="status-pill">ONLINE & READY</span>
+        </header>
+
+        <div class="grid">
+            <div class="card">
+                <h2>1. Simulate Student Appeal Tracker (3-Strike Engine)</h2>
+                <p style="color: #94a3b8; font-size: 14px;">Trigger successive review hits as <i>Student Sam (ID: 3)</i> to watch the system fire warnings and execute a complete account safety lockdown.</p>
+                <button class="btn" onclick="fireAppeal()">Trigger Review Request</button>
+                <div id="appeal-output" style="margin-top: 10px;"></div>
+            </div>
+
+            <div class="card">
+                <h2>2. Simulate M-Pesa Premium Activation</h2>
+                <p style="color: #94a3b8; font-size: 14px;">Simulate an automatic checkout completion for a student merchant profile to immediately auto-unlock premium badges and themes.</p>
+                <button class="btn" onclick="triggerMpesa()">Simulate M-Pesa Callback (100 KSh)</button>
+                <div id="mpesa-output" style="margin-top: 10px;"></div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h2>3. Admin Master Override & Veto Controls</h2>
+                <p style="color: #94a3b8; font-size: 14px;">Simulate the <i>Main Admin (ID: 1)</i> reversing a previous sub-admin ban, or executing an anti-favoritism point clawback.</p>
+                <button class="btn" onclick="triggerVeto()">Main Admin Master Veto</button>
+                <button class="btn btn-danger" onclick="triggerClawback()">Clawback Favored Points</button>
+                <div id="admin-output" style="margin-top: 10px;"></div>
+            </div>
+
+            <div class="card">
+                <h2>4. Live Sandbox Variable Monitor</h2>
+                <button class="btn" onclick="refreshMonitor()">Refresh Global App State</button>
+                <pre id="monitor-state">Loading backend variable arrays...</pre>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top: 20px;">
+            <h2>5. Admin Command Room (ACR) Immutable Audio/Action Feed Logs</h2>
+            <div id="acr-logs-container">Logs are completely empty. Perform admin choices above to populate tracks.</div>
+        </div>
+    </div>
+
+    <script>
+        async function refreshMonitor() {
+            const res = await fetch('/api/v1/sandbox/state');
+            const data = await res.json();
+            document.getElementById('monitor-state').innerText = JSON.stringify(data, null, 2);
+            
+            const logBox = document.getElementById('acr-logs-container');
+            if (data.acrLogs.length === 0) {
+                logBox.innerHTML = "Logs are completely empty. Perform admin choices above to populate tracks.";
+            } else {
+                logBox.innerHTML = data.acrLogs.map(log => `<div class="acr-log-box">${log}</div>`).join('');
+            }
+        }
+
+        async function fireAppeal() {
+            const out = document.getElementById('appeal-output');
+            try {
+                const res = await fetch('/api/v1/appeals/submit', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ userId: 3, contentId: 99, appealText: "Misunderstood post violation appeal" })
+                });
+                const data = await res.json();
+                out.innerHTML = `<span style="color: ${res.ok ? '#10b981' : '#f43f5e'}; font-weight: bold;">[Status ${res.status}] ${data.message || data.error}</span>`;
+            } catch (err) {
+                out.innerHTML = `<span style="color: #ef4444;">Connection fault encountered.</span>`;
+            }
+            refreshMonitor();
+        }
+
+        async function triggerMpesa() {
+            const out = document.getElementById('mpesa-output');
+            const res = await fetch('/api/v1/billing/mpesa-callback', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ userId: 3, amountPaid: 100.00, mpesaReceiptCode: "QRE890KLM" })
+            });
+            const data = await res.json();
+            out.innerHTML = `<span style="color: #10b981; font-weight: bold;">[M-Pesa Verification Activated] Badge: ${data.profileStatus.badge}. Privileges: ${data.profileStatus.unlockedPrivileges.join(', ')}</span>`;
+            refreshMonitor();
+        }
+
+        async function triggerVeto() {
+            const out = document.getElementById('admin-output');
+            const res = await fetch('/api/v1/admin/veto', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ mainAdminId: 1, targetUserId: 3, contentId: 99 })
+            });
+            const data = await res.json();
+            out.innerHTML = `<span style="color: #38bdf8; font-weight: bold;">${data.message || data.error}</span>`;
+            refreshMonitor();
+        }
+
+        async function triggerClawback() {
+            const out = document.getElementById('admin-output');
+            const res = await fetch('/api/v1/admin/points-clawback', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ mainAdminId: 1, targetUserId: 3, pointAmount: 50, issuingAdminId: 2 })
+            });
+            const data = await res.json();
+            out.innerHTML = `<span style="color: #ef4444; font-weight: bold;">${data.message || data.error}</span>`;
+            refreshMonitor();
+        }
+
+        // Run baseline fetch on document mounting sequence
+        refreshMonitor();
+    </script>
+</body>
+</html>
